@@ -5,19 +5,33 @@ services:
     environment:
       GOMODCACHE: /go/src/app/.modcache
       GOCACHE: /go/src/app/.cache
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: blog_platform_password
+      DB_NAME: blog_platform
+      DB_DSN: root:blog_platform_password@tcp(db:3306)/blog_platform?parseTime=true
+      JWT_SECRET: your-super-secret-jwt-key-for-development
+      PORT: 8080
     volumes:
       - "./app:/go/src/app"
     ports:
       - "8080:8080"
     depends_on:
       - db
+    restart: unless-stopped
 
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: abc123
-      MYSQL_DATABASE: appdb
+      MYSQL_ROOT_PASSWORD: blog_platform_password
+      MYSQL_DATABASE: blog_platform
+      MYSQL_USER: blog_user
+      MYSQL_PASSWORD: blog_user_password
     volumes:
       - "./.service-db:/var/lib/mysql"
+      - "./app/internal/infrastructure/database/migrations:/docker-entrypoint-initdb.d"
     ports:
-      - "3333:3306"
+      - "3306:3306"
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
