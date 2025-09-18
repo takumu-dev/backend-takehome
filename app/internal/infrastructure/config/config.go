@@ -1,8 +1,11 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds all configuration for the application
@@ -35,6 +38,11 @@ type JWTConfig struct {
 
 // Load loads configuration from environment variables
 func Load() *Config {
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found or could not be loaded: %v", err)
+	}
+
 	dbPort, _ := strconv.Atoi(getEnv("DB_PORT", "3306"))
 	
 	return &Config{

@@ -2,13 +2,25 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"blog-platform/internal/infrastructure/config"
+	"blog-platform/internal/infrastructure/database"
+	"blog-platform/internal/infrastructure/http"
 )
 
 func main() {
+	// Load configuration
+	cfg := config.Load()
+
+	// Initialize database
+	db, err := database.NewDatabase(cfg)
+	if err != nil {
+		log.Fatal("Failed to initialize database:", err)
+	}
+	defer db.Close()
+
 	// Create Echo instance
 	e := echo.New()
 
@@ -17,16 +29,30 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	// Health check endpoint
+	// Health check endpoint with database status
 	e.GET("/health", func(c echo.Context) error {
+		// Test database connection
+		if err := db.Ping(); err != nil {
+			return c.JSON(503, map[string]string{
+				"status":   "error",
+				"service":  "blog-platform",
+				"database": "disconnected",
+				"error":    err.Error(),
+			})
+		}
+
 		return c.JSON(200, map[string]string{
-			"status": "ok",
-			"service": "blog-platform",
+			"status":   "ok",
+			"service":  "blog-platform",
+			"database": "connected",
 		})
 	})
 
+	// Setup routes
+	http.SetupRoutes(e)
+
 	// Start server
-	port := os.Getenv("PORT")
+	port := cfg.Server.Port
 	if port == "" {
 		port = "8080"
 	}
