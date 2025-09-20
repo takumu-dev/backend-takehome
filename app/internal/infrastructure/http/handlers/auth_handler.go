@@ -30,9 +30,9 @@ func NewAuthHandler(userService user.Service, authService auth.AuthService, logg
 
 // RegisterRequest represents the registration request payload
 type RegisterRequest struct {
-	Name     string `json:"name" validate:"required,min=2,max=100,no_html,safe_string"`
+	Name     string `json:"name" validate:"required,min=1,max=255,no_html,safe_string"`
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,strong_password"`
+	Password string `json:"password" validate:"required,min=6,strong_password"`
 }
 
 // LoginRequest represents the login request payload

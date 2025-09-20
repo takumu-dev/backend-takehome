@@ -26,10 +26,10 @@ func NewCommentHandler(commentService comment.Service, logger service.Logger) *C
 	}
 }
 
-// CreateCommentRequest represents the request body for creating a comment
+// CreateCommentRequest represents the request payload for creating a comment
 type CreateCommentRequest struct {
-	AuthorName string `json:"author_name" validate:"required,max=255"`
-	Content    string `json:"content" validate:"required,min=3,max=1000"`
+	AuthorName string `json:"author_name" validate:"required,min=1,max=255,no_html,safe_string"`
+	Content    string `json:"content" validate:"required,min=3,max=1000,no_html"`
 }
 
 // CommentResponse represents a comment in API responses

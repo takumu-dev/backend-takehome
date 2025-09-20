@@ -28,14 +28,14 @@ func NewPostHandler(postService post.Service, logger service.Logger) *PostHandle
 
 // CreatePostRequest represents the create post request payload
 type CreatePostRequest struct {
-	Title   string `json:"title" validate:"required,min=1,max=500"`
-	Content string `json:"content" validate:"required,min=10,max=10000"`
+	Title   string `json:"title" validate:"required,min=1,max=500,no_html,safe_string"`
+	Content string `json:"content" validate:"required,min=10,max=10000,no_html"`
 }
 
 // UpdatePostRequest represents the update post request payload
 type UpdatePostRequest struct {
-	Title   string `json:"title" validate:"required,min=1,max=500"`
-	Content string `json:"content" validate:"required,min=10,max=10000"`
+	Title   string `json:"title" validate:"required,min=1,max=500,no_html,safe_string"`
+	Content string `json:"content" validate:"required,min=10,max=10000,no_html"`
 }
 
 // PostResponse represents the post data in responses
