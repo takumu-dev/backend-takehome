@@ -104,11 +104,11 @@ func NewMockAuthService(userService *MockUserService) *MockAuthService {
 	}
 }
 
-func (m *MockAuthService) GenerateToken(user *user.User) (string, error) {
+func (m *MockAuthService) GenerateToken(ctx context.Context, user *user.User) (string, error) {
 	return "mock-jwt-token", nil
 }
 
-func (m *MockAuthService) ValidateToken(token string) (*auth.TokenClaims, error) {
+func (m *MockAuthService) ValidateToken(ctx context.Context, token string) (*auth.TokenClaims, error) {
 	if token == "mock-jwt-token" {
 		return &auth.TokenClaims{
 			UserID: 1,
@@ -123,7 +123,7 @@ func (m *MockAuthService) Login(ctx context.Context, email, password string) (*u
 	if err != nil {
 		return nil, "", err
 	}
-	token, _ := m.GenerateToken(u)
+	token, _ := m.GenerateToken(ctx, u)
 	return u, token, nil
 }
 
@@ -132,11 +132,11 @@ func (m *MockAuthService) Register(ctx context.Context, name, email, password st
 	if err != nil {
 		return nil, "", err
 	}
-	token, _ := m.GenerateToken(u)
+	token, _ := m.GenerateToken(ctx, u)
 	return u, token, nil
 }
 
-func (m *MockAuthService) RefreshToken(token string) (string, error) {
+func (m *MockAuthService) RefreshToken(ctx context.Context, token string) (string, error) {
 	return "mock-refreshed-token", nil
 }
 

@@ -26,8 +26,7 @@ func NewAuthService(userService user.Service, tokenService auth.TokenService, lo
 }
 
 // GenerateToken generates a JWT token for the given user
-func (a *AuthService) GenerateToken(user *user.User) (string, error) {
-	ctx := context.Background()
+func (a *AuthService) GenerateToken(ctx context.Context, user *user.User) (string, error) {
 	a.logger.Debug(ctx, "Generating token for user", "user_id", user.ID, "email", user.Email)
 	
 	if user == nil {
@@ -47,8 +46,7 @@ func (a *AuthService) GenerateToken(user *user.User) (string, error) {
 }
 
 // ValidateToken validates a JWT token and returns the claims
-func (a *AuthService) ValidateToken(token string) (*auth.TokenClaims, error) {
-	ctx := context.Background()
+func (a *AuthService) ValidateToken(ctx context.Context, token string) (*auth.TokenClaims, error) {
 	a.logger.Debug(ctx, "Validating token")
 	
 	claims, err := a.tokenService.ValidateToken(token)
@@ -73,9 +71,9 @@ func (a *AuthService) Login(ctx context.Context, email, password string) (*user.
 	}
 	
 	// Generate token for the authenticated user
-	token, err := a.GenerateToken(u)
+	token, err := a.GenerateToken(ctx, u)
 	if err != nil {
-		a.logger.Error(ctx, "Failed to generate token after login", "user_id", u.ID, "error", err)
+		a.logger.Error(ctx, "Failed to generate token after login", "error", err)
 		return nil, "", fmt.Errorf("failed to generate token: %w", err)
 	}
 	
@@ -95,9 +93,9 @@ func (a *AuthService) Register(ctx context.Context, name, email, password string
 	}
 	
 	// Generate token for the new user
-	token, err := a.GenerateToken(u)
+	token, err := a.GenerateToken(ctx, u)
 	if err != nil {
-		a.logger.Error(ctx, "Failed to generate token after registration", "user_id", u.ID, "error", err)
+		a.logger.Error(ctx, "Failed to generate token after registration", "error", err)
 		return nil, "", fmt.Errorf("failed to generate token: %w", err)
 	}
 	
@@ -106,8 +104,7 @@ func (a *AuthService) Register(ctx context.Context, name, email, password string
 }
 
 // RefreshToken refreshes an existing token
-func (a *AuthService) RefreshToken(token string) (string, error) {
-	ctx := context.Background()
+func (a *AuthService) RefreshToken(ctx context.Context, token string) (string, error) {
 	a.logger.Debug(ctx, "Refreshing token")
 	
 	newToken, err := a.tokenService.RefreshToken(token)

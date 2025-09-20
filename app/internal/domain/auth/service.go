@@ -16,11 +16,11 @@ type PasswordValidator interface {
 
 // AuthService defines the interface for authentication operations
 type AuthService interface {
-	GenerateToken(user *user.User) (string, error)
-	ValidateToken(token string) (*TokenClaims, error)
+	GenerateToken(ctx context.Context, user *user.User) (string, error)
+	ValidateToken(ctx context.Context, token string) (*TokenClaims, error)
 	Login(ctx context.Context, email, password string) (*user.User, string, error)
 	Register(ctx context.Context, name, email, password string) (*user.User, string, error)
-	RefreshToken(token string) (string, error)
+	RefreshToken(ctx context.Context, token string) (string, error)
 }
 
 // TokenService defines the interface for JWT token operations

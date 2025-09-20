@@ -105,7 +105,7 @@ func NewMockAuthService(userRepo user.Repository, tokenService auth.TokenService
 }
 
 // GenerateToken generates a JWT token for a user
-func (s *MockAuthService) GenerateToken(u *user.User) (string, error) {
+func (s *MockAuthService) GenerateToken(ctx context.Context, u *user.User) (string, error) {
 	if u == nil {
 		return "", auth.ErrInvalidCredentials
 	}
@@ -113,7 +113,7 @@ func (s *MockAuthService) GenerateToken(u *user.User) (string, error) {
 }
 
 // ValidateToken validates a JWT token
-func (s *MockAuthService) ValidateToken(token string) (*auth.TokenClaims, error) {
+func (s *MockAuthService) ValidateToken(ctx context.Context, token string) (*auth.TokenClaims, error) {
 	return s.tokenService.ValidateToken(token)
 }
 
@@ -142,7 +142,7 @@ func (s *MockAuthService) Login(ctx context.Context, email, password string) (*u
 	}
 
 	// Generate token
-	token, err := s.GenerateToken(u)
+	token, err := s.GenerateToken(ctx, u)
 	if err != nil {
 		return nil, "", err
 	}
@@ -185,7 +185,7 @@ func (s *MockAuthService) Register(ctx context.Context, name, email, password st
 	}
 
 	// Generate token
-	token, err := s.GenerateToken(u)
+	token, err := s.GenerateToken(ctx, u)
 	if err != nil {
 		return nil, "", err
 	}
@@ -194,7 +194,7 @@ func (s *MockAuthService) Register(ctx context.Context, name, email, password st
 }
 
 // RefreshToken generates a new token from an existing token
-func (s *MockAuthService) RefreshToken(token string) (string, error) {
+func (s *MockAuthService) RefreshToken(ctx context.Context, token string) (string, error) {
 	return s.tokenService.RefreshToken(token)
 }
 
@@ -413,6 +413,7 @@ func TestAuthService_Register(t *testing.T) {
 func TestAuthService_GenerateToken(t *testing.T) {
 	tokenService := NewMockTokenService("test-secret")
 	authService := NewMockAuthService(nil, tokenService)
+	ctx := context.Background()
 
 	// Create a test user
 	testUser, err := user.NewUser("John Doe", "john@example.com", "password123")
@@ -442,7 +443,7 @@ func TestAuthService_GenerateToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			token, err := authService.GenerateToken(tt.user)
+			token, err := authService.GenerateToken(ctx, tt.user)
 
 			if tt.expectError {
 				if err == nil {
@@ -470,6 +471,7 @@ func TestAuthService_GenerateToken(t *testing.T) {
 func TestAuthService_ValidateToken(t *testing.T) {
 	tokenService := NewMockTokenService("test-secret")
 	authService := NewMockAuthService(nil, tokenService)
+	ctx := context.Background()
 
 	// Generate a valid token first
 	validToken, err := tokenService.GenerateToken(1, "test@example.com", 24*3600)
@@ -501,7 +503,7 @@ func TestAuthService_ValidateToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			claims, err := authService.ValidateToken(tt.token)
+			claims, err := authService.ValidateToken(ctx, tt.token)
 
 			if tt.expectError {
 				if err == nil {
@@ -526,6 +528,7 @@ func TestAuthService_ValidateToken(t *testing.T) {
 func TestAuthService_RefreshToken(t *testing.T) {
 	tokenService := NewMockTokenService("test-secret")
 	authService := NewMockAuthService(nil, tokenService)
+	ctx := context.Background()
 
 	// Generate a valid token first
 	validToken, err := tokenService.GenerateToken(1, "test@example.com", 24*3600)
@@ -557,7 +560,7 @@ func TestAuthService_RefreshToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			newToken, err := authService.RefreshToken(tt.token)
+			newToken, err := authService.RefreshToken(ctx, tt.token)
 
 			if tt.expectError {
 				if err == nil {

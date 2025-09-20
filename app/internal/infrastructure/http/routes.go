@@ -5,13 +5,14 @@ import (
 
 	"blog-platform/internal/application/service"
 	"blog-platform/internal/domain/auth"
+	"blog-platform/internal/domain/post"
 	"blog-platform/internal/domain/user"
 	"blog-platform/internal/infrastructure/http/handlers"
 	"blog-platform/internal/infrastructure/http/middleware"
 )
 
 // SetupRoutes configures all the routes for the application
-func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthService, logger service.Logger) {
+func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthService, postService post.Service, logger service.Logger) {
 	// Set up validator
 	e.Validator = middleware.NewValidator()
 	
@@ -29,6 +30,12 @@ func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthSe
 	// Auth handlers
 	authHandler := handlers.NewAuthHandler(userService, authService, logger)
 	
+	// Post handlers
+	postHandler := handlers.NewPostHandler(postService, logger)
+	
+	// Auth middleware for protected routes
+	authMiddleware := middleware.NewAuthMiddleware(authService, logger)
+	
 	// Auth routes
 	auth := v1.Group("/auth")
 	auth.POST("/register", authHandler.Register)
@@ -36,7 +43,11 @@ func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthSe
 	
 	// Posts routes
 	posts := v1.Group("/posts")
-	_ = posts // TODO: Add post handlers
+	posts.GET("", postHandler.ListPosts)                                    // GET /api/v1/posts
+	posts.GET("/:id", postHandler.GetPost)                                  // GET /api/v1/posts/{id}
+	posts.POST("", postHandler.CreatePost, authMiddleware.RequireAuth)      // POST /api/v1/posts (protected)
+	posts.PUT("/:id", postHandler.UpdatePost, authMiddleware.RequireAuth)   // PUT /api/v1/posts/{id} (protected)
+	posts.DELETE("/:id", postHandler.DeletePost, authMiddleware.RequireAuth) // DELETE /api/v1/posts/{id} (protected)
 	
 	// Documentation route
 	e.GET("/docs/*", func(c echo.Context) error {

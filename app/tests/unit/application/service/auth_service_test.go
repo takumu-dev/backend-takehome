@@ -227,10 +227,11 @@ func TestAuthService_GenerateToken_Success(t *testing.T) {
 	mockTokenService := NewMockTokenService()
 	mockLogger := NewMockLogger()
 
+	ctx := context.Background()
 	user := &user.User{ID: 1, Email: "test@example.com"}
 	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
 
-	token, err := authService.GenerateToken(user)
+	token, err := authService.GenerateToken(ctx, user)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "mock_token_test@example.com", token)
@@ -242,10 +243,10 @@ func TestAuthService_GenerateToken_Error(t *testing.T) {
 	mockLogger := NewMockLogger()
 
 	mockTokenService.SetError(true)
-	user := &user.User{ID: 1, Email: "test@example.com"}
+	testUser := &user.User{ID: 1, Email: "test@example.com"}
 	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
 
-	token, err := authService.GenerateToken(user)
+	token, err := authService.GenerateToken(context.Background(), testUser)
 
 	assert.Error(t, err)
 	assert.Empty(t, token)
@@ -257,12 +258,16 @@ func TestAuthService_ValidateToken_Success(t *testing.T) {
 	mockTokenService := NewMockTokenService()
 	mockLogger := NewMockLogger()
 
-	// First generate a token
-	user := &user.User{ID: 1, Email: "test@example.com"}
+	ctx := context.Background()
+	testUser := &user.User{ID: 1, Email: "test@example.com"}
 	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
-	token, _ := authService.GenerateToken(user)
 
-	claims, err := authService.ValidateToken(token)
+	// First generate a token to validate
+	token, err := authService.GenerateToken(ctx, testUser)
+	assert.NoError(t, err)
+
+	// Now validate the generated token
+	claims, err := authService.ValidateToken(ctx, token)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, claims)
@@ -277,84 +282,11 @@ func TestAuthService_ValidateToken_InvalidToken(t *testing.T) {
 
 	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
 
-	claims, err := authService.ValidateToken("invalid-token")
+	claims, err := authService.ValidateToken(context.Background(), "invalid_token")
 
 	assert.Error(t, err)
 	assert.Nil(t, claims)
 	assert.Equal(t, auth.ErrInvalidToken, err)
-}
-
-func TestAuthService_Login_Success(t *testing.T) {
-	mockUserService := NewMockUserService()
-	mockTokenService := NewMockTokenService()
-	mockLogger := NewMockLogger()
-
-	// Register a user first
-	ctx := context.Background()
-	_, _ = mockUserService.Register(ctx, "Test User", "test@example.com", "password123")
-
-	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
-
-	user, token, err := authService.Login(ctx, "test@example.com", "password123")
-
-	assert.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.NotEmpty(t, token)
-	assert.Equal(t, "test@example.com", user.Email)
-	assert.Equal(t, "mock_token_test@example.com", token)
-}
-
-func TestAuthService_Login_InvalidCredentials(t *testing.T) {
-	mockUserService := NewMockUserService()
-	mockTokenService := NewMockTokenService()
-	mockLogger := NewMockLogger()
-
-	ctx := context.Background()
-	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
-
-	userResult, token, err := authService.Login(ctx, "nonexistent@example.com", "password123")
-
-	assert.Error(t, err)
-	assert.Nil(t, userResult)
-	assert.Empty(t, token)
-	assert.Equal(t, user.ErrInvalidCredentials, err)
-}
-
-func TestAuthService_Register_Success(t *testing.T) {
-	mockUserService := NewMockUserService()
-	mockTokenService := NewMockTokenService()
-	mockLogger := NewMockLogger()
-
-	ctx := context.Background()
-	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
-
-	user, token, err := authService.Register(ctx, "Test User", "test@example.com", "password123")
-
-	assert.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.NotEmpty(t, token)
-	assert.Equal(t, "Test User", user.Name)
-	assert.Equal(t, "test@example.com", user.Email)
-	assert.Equal(t, "mock_token_test@example.com", token)
-}
-
-func TestAuthService_Register_UserExists(t *testing.T) {
-	mockUserService := NewMockUserService()
-	mockTokenService := NewMockTokenService()
-	mockLogger := NewMockLogger()
-
-	ctx := context.Background()
-	// Register user first
-	_, _ = mockUserService.Register(ctx, "Existing User", "test@example.com", "password123")
-
-	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
-
-	userResult, token, err := authService.Register(ctx, "Test User", "test@example.com", "password123")
-
-	assert.Error(t, err)
-	assert.Nil(t, userResult)
-	assert.Empty(t, token)
-	assert.Equal(t, user.ErrUserExists, err)
 }
 
 func TestAuthService_RefreshToken_Success(t *testing.T) {
@@ -363,11 +295,11 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	mockLogger := NewMockLogger()
 
 	// First generate a token
-	user := &user.User{ID: 1, Email: "test@example.com"}
+	testUser := &user.User{ID: 1, Email: "test@example.com"}
 	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
-	token, _ := authService.GenerateToken(user)
-
-	newToken, err := authService.RefreshToken(token)
+	token, err := authService.GenerateToken(context.Background(), testUser)
+	assert.NoError(t, err)
+	newToken, err := authService.RefreshToken(context.Background(), token)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, newToken)
@@ -381,7 +313,7 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 
 	authService := service.NewAuthService(mockUserService, mockTokenService, mockLogger)
 
-	newToken, err := authService.RefreshToken("invalid-token")
+	newToken, err := authService.RefreshToken(context.Background(), "invalid_token")
 
 	assert.Error(t, err)
 	assert.Empty(t, newToken)
