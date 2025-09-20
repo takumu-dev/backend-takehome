@@ -61,6 +61,7 @@ func main() {
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db.DB)
 	postRepo := repository.NewPostRepository(db.DB)
+	commentRepo := repository.NewCommentRepository(db.DB)
 
 	// Initialize JWT service
 	jwtService := infraauth.NewJWTService(cfg.JWT.Secret)
@@ -68,10 +69,11 @@ func main() {
 	// Initialize domain services
 	userService := service.NewUserService(userRepo, logger)
 	postService := service.NewPostService(postRepo, logger)
+	commentService := service.NewCommentService(commentRepo, logger)
 	authService := service.NewAuthService(userService, jwtService, logger)
 
 	// Setup routes
-	http.SetupRoutes(e, userService, authService, postService, logger)
+	http.SetupRoutes(e, userService, authService, postService, commentService, logger)
 
 	// Start server
 	port := cfg.Server.Port
