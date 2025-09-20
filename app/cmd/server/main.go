@@ -2,12 +2,18 @@ package main
 
 import (
 	"log"
+	"log/slog"
+	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"blog-platform/internal/application/service"
+	infraauth "blog-platform/internal/infrastructure/auth"
 	"blog-platform/internal/infrastructure/config"
 	"blog-platform/internal/infrastructure/database"
 	"blog-platform/internal/infrastructure/http"
+	"blog-platform/internal/infrastructure/logging"
+	"blog-platform/internal/infrastructure/repository"
 )
 
 func main() {
@@ -48,8 +54,22 @@ func main() {
 		})
 	})
 
+	// Initialize logger
+	slogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := logging.NewOperationLogger(slogger)
+
+	// Initialize repositories
+	userRepo := repository.NewUserRepository(db.DB)
+
+	// Initialize JWT service
+	jwtService := infraauth.NewJWTService(cfg.JWT.Secret)
+
+	// Initialize domain services
+	userService := service.NewUserService(userRepo, logger)
+	authService := service.NewAuthService(userService, jwtService, logger)
+
 	// Setup routes
-	http.SetupRoutes(e)
+	http.SetupRoutes(e, userService, authService, logger)
 
 	// Start server
 	port := cfg.Server.Port

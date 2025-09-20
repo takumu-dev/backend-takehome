@@ -8,20 +8,7 @@ import (
 	"blog-platform/internal/domain/post"
 )
 
-// MockLogger implements the service.Logger interface for testing
-type MockLogger struct{}
-
-func (m *MockLogger) Info(ctx context.Context, msg string, args ...any)  {}
-func (m *MockLogger) Error(ctx context.Context, msg string, args ...any) {}
-func (m *MockLogger) Warn(ctx context.Context, msg string, args ...any)  {}
-func (m *MockLogger) Debug(ctx context.Context, msg string, args ...any) {}
-
-func NewMockLogger() *MockLogger {
-	return &MockLogger{}
-}
-
-// Verify that MockLogger implements the Logger interface
-var _ service.Logger = (*MockLogger)(nil)
+// MockLogger is defined in auth_service_test.go to avoid duplication
 
 // MockPostRepository implements the PostRepository interface for testing
 type MockPostRepository struct {

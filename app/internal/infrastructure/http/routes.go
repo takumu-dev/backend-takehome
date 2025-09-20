@@ -2,10 +2,19 @@ package http
 
 import (
 	"github.com/labstack/echo/v4"
+
+	"blog-platform/internal/application/service"
+	"blog-platform/internal/domain/auth"
+	"blog-platform/internal/domain/user"
+	"blog-platform/internal/infrastructure/http/handlers"
+	"blog-platform/internal/infrastructure/http/middleware"
 )
 
 // SetupRoutes configures all the routes for the application
-func SetupRoutes(e *echo.Echo) {
+func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthService, logger service.Logger) {
+	// Set up validator
+	e.Validator = middleware.NewValidator()
+	
 	// API v1 group
 	v1 := e.Group("/api/v1")
 	
@@ -17,9 +26,13 @@ func SetupRoutes(e *echo.Echo) {
 		})
 	})
 	
+	// Auth handlers
+	authHandler := handlers.NewAuthHandler(userService, authService, logger)
+	
 	// Auth routes
 	auth := v1.Group("/auth")
-	_ = auth // TODO: Add auth handlers
+	auth.POST("/register", authHandler.Register)
+	auth.POST("/login", authHandler.Login)
 	
 	// Posts routes
 	posts := v1.Group("/posts")
