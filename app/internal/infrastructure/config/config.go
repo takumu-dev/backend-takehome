@@ -33,6 +33,11 @@ type DatabaseConfig struct {
 	Password string
 	Name     string
 	DSN      string
+	// Connection pool settings
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime int // in minutes
+	ConnMaxIdleTime int // in minutes
 }
 
 // JWTConfig holds JWT configuration
@@ -92,6 +97,11 @@ func Load() *Config {
 			Password: getEnv("DB_PASSWORD", ""),
 			Name:     getEnv("DB_NAME", "blog_platform"),
 			DSN:      getEnv("DB_DSN", "root:@tcp(localhost:3306)/blog_platform?parseTime=true"),
+			// Connection pool settings
+			MaxOpenConns:    parseInt(getEnv("DB_MAX_OPEN_CONNS", "25"), 25),
+			MaxIdleConns:    parseInt(getEnv("DB_MAX_IDLE_CONNS", "5"), 5),
+			ConnMaxLifetime: parseInt(getEnv("DB_CONN_MAX_LIFETIME", "5"), 5), // minutes
+			ConnMaxIdleTime: parseInt(getEnv("DB_CONN_MAX_IDLE_TIME", "1"), 1), // minutes
 		},
 		JWT: JWTConfig{
 			Secret: getEnv("JWT_SECRET", "your-secret-key"),
