@@ -1,3 +1,22 @@
+// @title Blog Platform API
+// @version 1.0
+// @description A RESTful API for a blog platform with user authentication, posts, and comments management.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@blog-platform.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 package main
 
 import (
@@ -7,11 +26,12 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	"blog-platform/internal/application/service"
-	infraauth "blog-platform/internal/infrastructure/auth"
-	"blog-platform/internal/infrastructure/config"
 	"blog-platform/internal/infrastructure/database"
 	"blog-platform/internal/infrastructure/http"
+	infraauth "blog-platform/internal/infrastructure/auth"
+	"blog-platform/internal/infrastructure/config"
 	"blog-platform/internal/infrastructure/logging"
 	"blog-platform/internal/infrastructure/repository"
 )

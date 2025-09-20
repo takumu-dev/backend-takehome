@@ -8,6 +8,8 @@ import (
 
 	"blog-platform/internal/application/service"
 	"blog-platform/internal/domain/post"
+	"blog-platform/internal/infrastructure/http/errors"
+	"blog-platform/internal/infrastructure/http/middleware"
 )
 
 // PostHandler handles post-related HTTP requests
@@ -84,28 +86,23 @@ func (h *PostHandler) CreatePost(c echo.Context) error {
 	var req CreatePostRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error(ctx, "failed to bind create post request", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "Invalid request",
-			Message: "Invalid JSON format",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
+
+	// Sanitize input
+	req.Title = middleware.SanitizeInput(req.Title)
+	req.Content = middleware.SanitizeInput(req.Content)
 
 	if err := c.Validate(req); err != nil {
 		h.logger.Error(ctx, "create post request validation failed", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "Validation failed",
-			Message: err.Error(),
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Create post
 	createdPost, err := h.postService.CreatePost(ctx, userID, req.Title, req.Content)
 	if err != nil {
 		h.logger.Error(ctx, "failed to create post", "userID", userID, "error", err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "Internal server error",
-			Message: "Failed to create post",
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Convert to response format
@@ -141,27 +138,14 @@ func (h *PostHandler) GetPost(c echo.Context) error {
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
 		h.logger.Error(ctx, "invalid post ID", "postID", postIDStr)
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "Invalid post ID",
-			Message: "Post ID must be a valid integer",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
 
 	// Get post
 	retrievedPost, err := h.postService.GetPost(ctx, postID)
 	if err != nil {
-		if err == post.ErrPostNotFound {
-			h.logger.Warn(ctx, "post not found", "postID", postID)
-			return c.JSON(http.StatusNotFound, ErrorResponse{
-				Error:   "Post not found",
-				Message: "The requested post does not exist",
-			})
-		}
 		h.logger.Error(ctx, "failed to get post", "postID", postID, "error", err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "Internal server error",
-			Message: "Failed to retrieve post",
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Convert to response format
@@ -210,10 +194,7 @@ func (h *PostHandler) ListPosts(c echo.Context) error {
 	posts, err := h.postService.ListPosts(ctx, limit, offset)
 	if err != nil {
 		h.logger.Error(ctx, "failed to list posts", "limit", limit, "offset", offset, "error", err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "Internal server error",
-			Message: "Failed to retrieve posts",
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Convert to response format
@@ -262,10 +243,7 @@ func (h *PostHandler) UpdatePost(c echo.Context) error {
 	userID, ok := c.Get("user_id").(int)
 	if !ok {
 		h.logger.Error(ctx, "user_id not found in context")
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
-			Error:   "Unauthorized",
-			Message: "User authentication required",
-		})
+		return errors.HandleError(c, errors.ErrUnauthorized)
 	}
 
 	// Parse post ID
@@ -273,52 +251,30 @@ func (h *PostHandler) UpdatePost(c echo.Context) error {
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
 		h.logger.Error(ctx, "invalid post ID", "postID", postIDStr)
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "Invalid post ID",
-			Message: "Post ID must be a valid integer",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
 
 	// Parse and validate request
 	var req UpdatePostRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error(ctx, "failed to bind update post request", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "Invalid request",
-			Message: "Invalid JSON format",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
+
+	// Sanitize input
+	req.Title = middleware.SanitizeInput(req.Title)
+	req.Content = middleware.SanitizeInput(req.Content)
 
 	if err := c.Validate(req); err != nil {
 		h.logger.Error(ctx, "update post request validation failed", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "Validation failed",
-			Message: err.Error(),
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Update post
 	updatedPost, err := h.postService.UpdatePost(ctx, userID, postID, req.Title, req.Content)
 	if err != nil {
-		if err == post.ErrPostNotFound {
-			h.logger.Warn(ctx, "post not found for update", "postID", postID)
-			return c.JSON(http.StatusNotFound, ErrorResponse{
-				Error:   "Post not found",
-				Message: "The requested post does not exist",
-			})
-		}
-		if err == post.ErrUnauthorized {
-			h.logger.Warn(ctx, "unauthorized post update attempt", "userID", userID, "postID", postID)
-			return c.JSON(http.StatusForbidden, ErrorResponse{
-				Error:   "Forbidden",
-				Message: "You can only update your own posts",
-			})
-		}
 		h.logger.Error(ctx, "failed to update post", "userID", userID, "postID", postID, "error", err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "Internal server error",
-			Message: "Failed to update post",
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Convert to response format
@@ -355,10 +311,7 @@ func (h *PostHandler) DeletePost(c echo.Context) error {
 	userID, ok := c.Get("user_id").(int)
 	if !ok {
 		h.logger.Error(ctx, "user_id not found in context")
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{
-			Error:   "Unauthorized",
-			Message: "User authentication required",
-		})
+		return errors.HandleError(c, errors.ErrUnauthorized)
 	}
 
 	// Parse post ID
@@ -366,34 +319,14 @@ func (h *PostHandler) DeletePost(c echo.Context) error {
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
 		h.logger.Error(ctx, "invalid post ID", "postID", postIDStr)
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "Invalid post ID",
-			Message: "Post ID must be a valid integer",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
 
 	// Delete post
 	err = h.postService.DeletePost(ctx, userID, postID)
 	if err != nil {
-		if err == post.ErrPostNotFound {
-			h.logger.Warn(ctx, "post not found for deletion", "postID", postID)
-			return c.JSON(http.StatusNotFound, ErrorResponse{
-				Error:   "Post not found",
-				Message: "The requested post does not exist",
-			})
-		}
-		if err == post.ErrUnauthorized {
-			h.logger.Warn(ctx, "unauthorized post deletion attempt", "userID", userID, "postID", postID)
-			return c.JSON(http.StatusForbidden, ErrorResponse{
-				Error:   "Forbidden",
-				Message: "You can only delete your own posts",
-			})
-		}
 		h.logger.Error(ctx, "failed to delete post", "userID", userID, "postID", postID, "error", err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "Internal server error",
-			Message: "Failed to delete post",
-		})
+		return errors.HandleError(c, err)
 	}
 
 	h.logger.Info(ctx, "post deleted successfully", "postID", postID, "userID", userID)

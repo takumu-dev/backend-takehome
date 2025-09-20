@@ -8,6 +8,8 @@ import (
 	"blog-platform/internal/application/service"
 	"blog-platform/internal/domain/auth"
 	"blog-platform/internal/domain/user"
+	"blog-platform/internal/infrastructure/http/errors"
+	"blog-platform/internal/infrastructure/http/middleware"
 )
 
 // AuthHandler handles authentication-related HTTP requests
@@ -28,9 +30,9 @@ func NewAuthHandler(userService user.Service, authService auth.AuthService, logg
 
 // RegisterRequest represents the registration request payload
 type RegisterRequest struct {
-	Name     string `json:"name" validate:"required,min=2,max=255"`
+	Name     string `json:"name" validate:"required,min=2,max=100,no_html,safe_string"`
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
+	Password string `json:"password" validate:"required,strong_password"`
 }
 
 // LoginRequest represents the login request payload
@@ -60,16 +62,16 @@ type ErrorResponse struct {
 
 // Register handles user registration
 // @Summary Register a new user
-// @Description Create a new user account
-// @Tags auth
+// @Description Register a new user account with name, email, and password
+// @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body RegisterRequest true "Registration request"
-// @Success 201 {object} AuthResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 409 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
-// @Router /api/v1/auth/register [post]
+// @Param user body RegisterRequest true "User registration data"
+// @Success 201 {object} AuthResponse "User successfully registered"
+// @Failure 400 {object} ErrorResponse "Invalid request data or validation error"
+// @Failure 409 {object} ErrorResponse "User already exists"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(c echo.Context) error {
 	ctx := c.Request().Context()
 	h.logger.Info(ctx, "registration request received")
@@ -77,35 +79,23 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	var req RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error(ctx, "failed to bind registration request", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
+	
+	// Sanitize input
+	req.Name = middleware.SanitizeInput(req.Name)
+	req.Email = middleware.SanitizeInput(req.Email)
 
 	if err := c.Validate(&req); err != nil {
 		h.logger.Error(ctx, "registration request validation failed", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "validation_failed",
-			Message: err.Error(),
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Register user
 	registeredUser, token, err := h.authService.Register(ctx, req.Name, req.Email, req.Password)
 	if err != nil {
-		if err == user.ErrUserExists {
-			h.logger.Warn(ctx, "registration attempt with existing email", "email", req.Email)
-			return c.JSON(http.StatusConflict, ErrorResponse{
-				Error:   "user_exists",
-				Message: "User with this email already exists",
-			})
-		}
-		h.logger.Error(ctx, "user registration failed", "email", req.Email, "error", err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "registration_failed",
-			Message: "Failed to register user",
-		})
+		h.logger.Error(ctx, "failed to register user", "error", err.Error(), "email", req.Email)
+		return errors.HandleError(c, err)
 	}
 
 	response := AuthResponse{
@@ -123,16 +113,16 @@ func (h *AuthHandler) Register(c echo.Context) error {
 
 // Login handles user authentication
 // @Summary Login user
-// @Description Authenticate user with email and password
-// @Tags auth
+// @Description Authenticate user with email and password, returns JWT token
+// @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body LoginRequest true "Login request"
-// @Success 200 {object} AuthResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 401 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
-// @Router /api/v1/auth/login [post]
+// @Param credentials body LoginRequest true "User login credentials"
+// @Success 200 {object} AuthResponse "User successfully authenticated"
+// @Failure 400 {object} ErrorResponse "Invalid request data or validation error"
+// @Failure 401 {object} ErrorResponse "Invalid credentials"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c echo.Context) error {
 	ctx := c.Request().Context()
 	h.logger.Info(ctx, "login request received")
@@ -140,35 +130,22 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	var req LoginRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error(ctx, "failed to bind login request", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "Invalid request format",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
+	
+	// Sanitize input
+	req.Email = middleware.SanitizeInput(req.Email)
 
 	if err := c.Validate(&req); err != nil {
 		h.logger.Error(ctx, "login request validation failed", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "validation_failed",
-			Message: err.Error(),
-		})
+		return errors.HandleError(c, err)
 	}
 
 	// Authenticate user
 	authenticatedUser, token, err := h.authService.Login(ctx, req.Email, req.Password)
 	if err != nil {
-		if err == user.ErrInvalidCredentials {
-			h.logger.Warn(ctx, "login attempt with invalid credentials", "email", req.Email)
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{
-				Error:   "invalid_credentials",
-				Message: "Invalid email or password",
-			})
-		}
 		h.logger.Error(ctx, "user login failed", "email", req.Email, "error", err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "login_failed",
-			Message: "Failed to authenticate user",
-		})
+		return errors.HandleError(c, err)
 	}
 
 	response := AuthResponse{

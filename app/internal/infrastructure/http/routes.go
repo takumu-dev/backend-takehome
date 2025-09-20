@@ -2,7 +2,9 @@ package http
 
 import (
 	"github.com/labstack/echo/v4"
+	echoSwagger "github.com/swaggo/echo-swagger"
 
+	_ "blog-platform/docs"
 	"blog-platform/internal/application/service"
 	"blog-platform/internal/domain/auth"
 	"blog-platform/internal/domain/comment"
@@ -16,6 +18,11 @@ import (
 func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthService, postService post.Service, commentService comment.Service, logger service.Logger) {
 	// Set up validator
 	e.Validator = middleware.NewValidator()
+	
+	// Global middleware
+	e.Use(middleware.RequestID())
+	e.Use(middleware.SecurityHeaders())
+	e.Use(middleware.RequestResponseLogger(logger))
 	
 	// API v1 group
 	v1 := e.Group("/api/v1")
@@ -58,8 +65,5 @@ func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthSe
 	posts.GET("/:id/comments", commentHandler.GetCommentsByPost)            // GET /api/v1/posts/{id}/comments
 	
 	// Documentation route
-	e.GET("/docs/*", func(c echo.Context) error {
-		// TODO: Add swagger documentation handler
-		return c.String(200, "API Documentation - Coming Soon")
-	})
+	e.GET("/docs/*", echoSwagger.WrapHandler)
 }

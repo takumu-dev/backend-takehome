@@ -223,7 +223,7 @@ func TestAuthHandler_Register_ValidationError(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	require.NoError(t, err)
 	
-	assert.Equal(t, "validation_failed", response.Error)
+	assert.Equal(t, "validation_error", response.Error)
 }
 
 func TestAuthHandler_Register_UserExists(t *testing.T) {
@@ -263,7 +263,7 @@ func TestAuthHandler_Register_UserExists(t *testing.T) {
 	err = json.Unmarshal(rec2.Body.Bytes(), &response)
 	require.NoError(t, err)
 	
-	assert.Equal(t, "user_exists", response.Error)
+	assert.Equal(t, "conflict", response.Error)
 }
 
 func TestAuthHandler_Login_Success(t *testing.T) {
@@ -369,5 +369,5 @@ func TestAuthHandler_Login_ValidationError(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	require.NoError(t, err)
 	
-	assert.Equal(t, "validation_failed", response.Error)
+	assert.Equal(t, "validation_error", response.Error)
 }

@@ -8,6 +8,8 @@ import (
 
 	"blog-platform/internal/application/service"
 	"blog-platform/internal/domain/comment"
+	"blog-platform/internal/infrastructure/http/errors"
+	"blog-platform/internal/infrastructure/http/middleware"
 )
 
 // CommentHandler handles HTTP requests for comment operations
@@ -68,28 +70,23 @@ func (h *CommentHandler) CreateComment(c echo.Context) error {
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
 		h.logger.Warn(ctx, "Invalid post ID in path", "post_id", postIDStr, "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_post_id",
-			Message: "Post ID must be a valid integer",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
 	
-	// Parse and validate request body
+	// Parse and validate request
 	var req CreateCommentRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Warn(ctx, "Failed to bind comment request", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "Invalid request body",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
+	
+	// Sanitize input
+	req.AuthorName = middleware.SanitizeInput(req.AuthorName)
+	req.Content = middleware.SanitizeInput(req.Content)
 	
 	if err := c.Validate(&req); err != nil {
 		h.logger.Warn(ctx, "Comment validation failed", "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "validation_error",
-			Message: err.Error(),
-		})
+		return errors.HandleError(c, err)
 	}
 	
 	h.logger.Info(ctx, "Creating comment", "post_id", postID, "author_name", req.AuthorName)
@@ -98,10 +95,7 @@ func (h *CommentHandler) CreateComment(c echo.Context) error {
 	createdComment, err := h.commentService.AddComment(ctx, postID, req.AuthorName, req.Content)
 	if err != nil {
 		h.logger.Error(ctx, "Failed to create comment", "error", err.Error(), "post_id", postID)
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "creation_failed",
-			Message: "Failed to create comment",
-		})
+		return errors.HandleError(c, err)
 	}
 	
 	response := CommentResponse{
@@ -136,10 +130,7 @@ func (h *CommentHandler) GetCommentsByPost(c echo.Context) error {
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
 		h.logger.Warn(ctx, "Invalid post ID in path", "post_id", postIDStr, "error", err.Error())
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_post_id",
-			Message: "Post ID must be a valid integer",
-		})
+		return errors.HandleError(c, errors.ErrInvalidRequest)
 	}
 	
 	// Parse pagination parameters
@@ -163,10 +154,7 @@ func (h *CommentHandler) GetCommentsByPost(c echo.Context) error {
 	comments, err := h.commentService.GetCommentsByPost(ctx, postID, limit, offset)
 	if err != nil {
 		h.logger.Error(ctx, "Failed to get comments", "error", err.Error(), "post_id", postID)
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "retrieval_failed",
-			Message: "Failed to retrieve comments",
-		})
+		return errors.HandleError(c, err)
 	}
 	
 	// Convert to response format

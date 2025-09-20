@@ -307,7 +307,7 @@ func TestPostHandler_CreatePost_ValidationError(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	require.NoError(t, err)
 	
-	assert.Equal(t, "Validation failed", response.Error)
+	assert.Equal(t, "validation_error", response.Error)
 }
 
 func TestPostHandler_CreatePost_Unauthorized(t *testing.T) {
