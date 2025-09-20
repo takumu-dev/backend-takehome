@@ -3,18 +3,17 @@ package service
 import (
 	"context"
 
-	"blog-platform/internal/application/logging"
 	"blog-platform/internal/domain/post"
 )
 
 // PostService implements the post.Service interface
 type PostService struct {
 	repo   post.Repository
-	logger logging.Logger
+	logger Logger
 }
 
 // NewPostService creates a new PostService instance
-func NewPostService(repo post.Repository, logger logging.Logger) *PostService {
+func NewPostService(repo post.Repository, logger Logger) *PostService {
 	return &PostService{
 		repo:   repo,
 		logger: logger,

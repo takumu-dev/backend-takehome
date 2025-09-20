@@ -4,15 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"time"
-)
 
-// Logger defines the interface for application logging
-type Logger interface {
-	Info(ctx context.Context, msg string, args ...any)
-	Error(ctx context.Context, msg string, args ...any)
-	Warn(ctx context.Context, msg string, args ...any)
-	Debug(ctx context.Context, msg string, args ...any)
-}
+	"blog-platform/internal/application/service"
+)
 
 // OperationLogger provides structured logging for application operations
 type OperationLogger struct {
@@ -89,3 +83,6 @@ func (l *OperationLogger) LogOperationWithResult(ctx context.Context, operation 
 	
 	return result, err
 }
+
+// Verify that OperationLogger implements the Logger interface
+var _ service.Logger = (*OperationLogger)(nil)

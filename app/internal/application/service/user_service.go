@@ -4,18 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"blog-platform/internal/application/logging"
 	"blog-platform/internal/domain/user"
 )
 
 // UserService implements the user.Service interface
 type UserService struct {
 	repo   user.Repository
-	logger logging.Logger
+	logger Logger
 }
 
 // NewUserService creates a new UserService instance
-func NewUserService(repo user.Repository, logger logging.Logger) *UserService {
+func NewUserService(repo user.Repository, logger Logger) *UserService {
 	return &UserService{
 		repo:   repo,
 		logger: logger,

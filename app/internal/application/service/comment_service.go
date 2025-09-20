@@ -4,18 +4,17 @@ import (
 	"context"
 	"errors"
 
-	"blog-platform/internal/application/logging"
 	"blog-platform/internal/domain/comment"
 )
 
 // CommentService implements the comment.Service interface
 type CommentService struct {
 	repo   comment.Repository
-	logger logging.Logger
+	logger Logger
 }
 
 // NewCommentService creates a new comment service
-func NewCommentService(repo comment.Repository, logger logging.Logger) *CommentService {
+func NewCommentService(repo comment.Repository, logger Logger) *CommentService {
 	return &CommentService{
 		repo:   repo,
 		logger: logger,
