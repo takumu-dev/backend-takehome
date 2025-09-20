@@ -17,6 +17,7 @@ type Config struct {
 	CORS        CORSConfig
 	Logging     LoggingConfig
 	RateLimit   RateLimitConfig
+	Compression CompressionConfig
 }
 
 // ServerConfig holds server configuration
@@ -64,6 +65,13 @@ type RateLimitConfig struct {
 	DefaultBurstSize         int
 	AuthRequestsPerSecond    float64
 	AuthBurstSize            int
+}
+
+// CompressionConfig holds compression configuration
+type CompressionConfig struct {
+	Enabled   bool
+	Level     int
+	MinLength int
 }
 
 // Load loads configuration from environment variables
@@ -121,6 +129,11 @@ func Load() *Config {
 			AuthRequestsPerSecond:    parseFloat(getEnv("RATE_LIMIT_AUTH_RPS", "2"), 2),
 			AuthBurstSize:            parseInt(getEnv("RATE_LIMIT_AUTH_BURST", "5"), 5),
 		},
+		Compression: CompressionConfig{
+			Enabled:   parseBool(getEnv("COMPRESSION_ENABLED", "true"), true),
+			Level:     parseInt(getEnv("COMPRESSION_LEVEL", "6"), 6),
+			MinLength: parseInt(getEnv("COMPRESSION_MIN_LENGTH", "1024"), 1024),
+		},
 	}
 }
 
@@ -143,6 +156,14 @@ func parseFloat(str string, fallback float64) float64 {
 // parseInt parses a string to int with fallback
 func parseInt(str string, fallback int) int {
 	if value, err := strconv.Atoi(str); err == nil {
+		return value
+	}
+	return fallback
+}
+
+// parseBool parses a string to bool with fallback
+func parseBool(str string, fallback bool) bool {
+	if value, err := strconv.ParseBool(str); err == nil {
 		return value
 	}
 	return fallback

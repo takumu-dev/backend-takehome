@@ -23,6 +23,9 @@ func SetupRoutes(e *echo.Echo, cfg *config.Config, userService user.Service, aut
 	// Apply CORS middleware with config
 	e.Use(middleware.CORS(cfg))
 	
+	// Apply compression middleware
+	e.Use(middleware.Compression(cfg))
+	
 	// Apply rate limiting middleware
 	e.Use(middleware.RateLimiterMiddleware(cfg))
 	

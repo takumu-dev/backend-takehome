@@ -30,6 +30,10 @@ services:
       DB_MAX_IDLE_CONNS: 5
       DB_CONN_MAX_LIFETIME: 5
       DB_CONN_MAX_IDLE_TIME: 1
+      # Compression Configuration
+      COMPRESSION_ENABLED: true
+      COMPRESSION_LEVEL: 6
+      COMPRESSION_MIN_LENGTH: 1024
     volumes:
       - "./app:/go/src/app"
     ports:
