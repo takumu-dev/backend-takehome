@@ -34,8 +34,8 @@ func (a *AuthService) GenerateToken(ctx context.Context, user *user.User) (strin
 		return "", fmt.Errorf("user cannot be nil")
 	}
 	
-	// Generate token with 24 hour duration
-	token, err := a.tokenService.GenerateToken(user.ID, user.Email, 24*time.Hour)
+	// Generate token with shorter 2 hour duration for security
+	token, err := a.tokenService.GenerateToken(user.ID, user.Email, 2*time.Hour)
 	if err != nil {
 		a.logger.Error(ctx, "Failed to generate token", "user_id", user.ID, "error", err)
 		return "", err

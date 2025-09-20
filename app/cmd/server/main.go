@@ -21,19 +21,18 @@ package main
 
 import (
 	"log"
-	"log/slog"
-	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"blog-platform/internal/application/service"
-	"blog-platform/internal/infrastructure/database"
-	"blog-platform/internal/infrastructure/http"
-	infraauth "blog-platform/internal/infrastructure/auth"
 	"blog-platform/internal/infrastructure/config"
+	"blog-platform/internal/infrastructure/database"
+	http "blog-platform/internal/infrastructure/http"
 	"blog-platform/internal/infrastructure/logging"
 	"blog-platform/internal/infrastructure/repository"
+
+	"blog-platform/internal/application/service"
+	infraauth "blog-platform/internal/infrastructure/auth"
 )
 
 func main() {
@@ -50,10 +49,9 @@ func main() {
 	// Create Echo instance
 	e := echo.New()
 
-	// Middleware
+	// Basic middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
 
 	// Health check endpoint with database status
 	e.GET("/health", func(c echo.Context) error {
@@ -74,9 +72,8 @@ func main() {
 		})
 	})
 
-	// Initialize logger
-	slogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	logger := logging.NewOperationLogger(slogger)
+	// Initialize logger with configuration
+	logger := logging.NewLogger(cfg)
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db.DB)
@@ -93,7 +90,7 @@ func main() {
 	authService := service.NewAuthService(userService, jwtService, logger)
 
 	// Setup routes
-	http.SetupRoutes(e, userService, authService, postService, commentService, logger)
+	http.SetupRoutes(e, cfg, userService, authService, postService, commentService, logger)
 
 	// Start server
 	port := cfg.Server.Port

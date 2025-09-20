@@ -10,18 +10,25 @@ import (
 	"blog-platform/internal/domain/comment"
 	"blog-platform/internal/domain/post"
 	"blog-platform/internal/domain/user"
+	"blog-platform/internal/infrastructure/config"
 	"blog-platform/internal/infrastructure/http/handlers"
 	"blog-platform/internal/infrastructure/http/middleware"
 )
 
 // SetupRoutes configures all the routes for the application
-func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthService, postService post.Service, commentService comment.Service, logger service.Logger) {
+func SetupRoutes(e *echo.Echo, cfg *config.Config, userService user.Service, authService auth.AuthService, postService post.Service, commentService comment.Service, logger service.Logger) {
 	// Set up validator
 	e.Validator = middleware.NewValidator()
 	
-	// Global middleware
-	e.Use(middleware.RequestID())
+	// Apply CORS middleware with config
+	e.Use(middleware.CORS(cfg))
+	
+	// Apply rate limiting middleware
+	e.Use(middleware.RateLimiterMiddleware(cfg))
+	
+	// Apply other middleware
 	e.Use(middleware.SecurityHeaders())
+	e.Use(middleware.RequestID())
 	e.Use(middleware.RequestResponseLogger(logger))
 	
 	// API v1 group
@@ -47,8 +54,9 @@ func SetupRoutes(e *echo.Echo, userService user.Service, authService auth.AuthSe
 	// Auth middleware for protected routes
 	authMiddleware := middleware.NewAuthMiddleware(authService, logger)
 	
-	// Auth routes
+	// Auth routes with stricter rate limiting
 	auth := v1.Group("/auth")
+	auth.Use(middleware.AuthRateLimiterMiddleware(cfg)) // Apply stricter rate limiting to auth endpoints
 	auth.POST("/register", authHandler.Register)
 	auth.POST("/login", authHandler.Login)
 	

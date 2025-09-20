@@ -52,10 +52,14 @@ func (j *JWTService) GenerateToken(userID int, email string, duration time.Durat
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			NotBefore: jwt.NewNumericDate(now),
 			Issuer:    "blog-platform",
+			Subject:   email,
+			Audience:  []string{"blog-platform-api"},
 		},
 	}
 
+	// Use HS256 for security (HMAC with SHA-256)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(j.secretKey)
 	if err != nil {

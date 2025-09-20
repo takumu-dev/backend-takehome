@@ -22,6 +22,7 @@ const (
 	ErrCodeConflict       ErrorCode = "conflict"
 	ErrCodeUserExists     ErrorCode = "user_exists"
 	ErrCodeInvalidCredentials ErrorCode = "invalid_credentials"
+	ErrCodeRateLimitExceeded ErrorCode = "rate_limit_exceeded"
 	
 	// Server errors (5xx)
 	ErrCodeInternal       ErrorCode = "internal_error"
@@ -128,6 +129,12 @@ var (
 		ErrCodeInvalidRequest,
 		"Invalid request format",
 		http.StatusBadRequest,
+	)
+	
+	ErrTooManyRequests = NewAPIError(
+		ErrCodeRateLimitExceeded,
+		"Rate limit exceeded. Please try again later",
+		http.StatusTooManyRequests,
 	)
 )
 
