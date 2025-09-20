@@ -81,12 +81,12 @@ func TestCommentService_Implementation(t *testing.T) {
 	repo := NewMockCommentRepository()
 	
 	// Verify that CommentService implements the Service interface
-	var _ comment.Service = service.NewCommentService(repo)
+	var _ comment.Service = service.NewCommentService(repo, NewMockLogger())
 }
 
 func TestCommentService_AddComment_Integration(t *testing.T) {
 	repo := NewMockCommentRepository()
-	commentService := service.NewCommentService(repo)
+	commentService := service.NewCommentService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Test successful comment creation
@@ -124,7 +124,7 @@ func TestCommentService_AddComment_Integration(t *testing.T) {
 
 func TestCommentService_GetComment_Integration(t *testing.T) {
 	repo := NewMockCommentRepository()
-	commentService := service.NewCommentService(repo)
+	commentService := service.NewCommentService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Test getting non-existent comment
@@ -157,7 +157,7 @@ func TestCommentService_GetComment_Integration(t *testing.T) {
 
 func TestCommentService_GetCommentsByPost_Integration(t *testing.T) {
 	repo := NewMockCommentRepository()
-	commentService := service.NewCommentService(repo)
+	commentService := service.NewCommentService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create comments for different posts
@@ -202,7 +202,7 @@ func TestCommentService_GetCommentsByPost_Integration(t *testing.T) {
 
 func TestCommentService_UpdateComment_Integration(t *testing.T) {
 	repo := NewMockCommentRepository()
-	commentService := service.NewCommentService(repo)
+	commentService := service.NewCommentService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create a comment
@@ -241,7 +241,7 @@ func TestCommentService_UpdateComment_Integration(t *testing.T) {
 
 func TestCommentService_DeleteComment_Integration(t *testing.T) {
 	repo := NewMockCommentRepository()
-	commentService := service.NewCommentService(repo)
+	commentService := service.NewCommentService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create a comment

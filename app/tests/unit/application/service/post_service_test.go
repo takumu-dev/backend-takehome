@@ -8,6 +8,18 @@ import (
 	"blog-platform/internal/domain/post"
 )
 
+// MockLogger implements the logging.Logger interface for testing
+type MockLogger struct{}
+
+func (m *MockLogger) Info(ctx context.Context, msg string, args ...any)  {}
+func (m *MockLogger) Error(ctx context.Context, msg string, args ...any) {}
+func (m *MockLogger) Warn(ctx context.Context, msg string, args ...any)  {}
+func (m *MockLogger) Debug(ctx context.Context, msg string, args ...any) {}
+
+func NewMockLogger() *MockLogger {
+	return &MockLogger{}
+}
+
 // MockPostRepository implements the PostRepository interface for testing
 type MockPostRepository struct {
 	posts  map[int]*post.Post
@@ -106,12 +118,12 @@ func (m *MockPostRepository) Delete(ctx context.Context, id int) error {
 func TestPostService_Implementation(t *testing.T) {
 	// Test that our concrete service implements the interface
 	repo := NewMockPostRepository()
-	var _ post.Service = service.NewPostService(repo)
+	var _ post.Service = service.NewPostService(repo, NewMockLogger())
 }
 
 func TestPostService_CreatePost_Integration(t *testing.T) {
 	repo := NewMockPostRepository()
-	postService := service.NewPostService(repo)
+	postService := service.NewPostService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Test successful post creation
@@ -146,7 +158,7 @@ func TestPostService_CreatePost_Integration(t *testing.T) {
 
 func TestPostService_GetPost_Integration(t *testing.T) {
 	repo := NewMockPostRepository()
-	postService := service.NewPostService(repo)
+	postService := service.NewPostService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create a post first
@@ -174,7 +186,7 @@ func TestPostService_GetPost_Integration(t *testing.T) {
 
 func TestPostService_UpdatePost_Integration(t *testing.T) {
 	repo := NewMockPostRepository()
-	postService := service.NewPostService(repo)
+	postService := service.NewPostService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create a post first
@@ -208,7 +220,7 @@ func TestPostService_UpdatePost_Integration(t *testing.T) {
 
 func TestPostService_DeletePost_Integration(t *testing.T) {
 	repo := NewMockPostRepository()
-	postService := service.NewPostService(repo)
+	postService := service.NewPostService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create a post first
@@ -244,7 +256,7 @@ func TestPostService_DeletePost_Integration(t *testing.T) {
 
 func TestPostService_GetPostsByAuthor_Integration(t *testing.T) {
 	repo := NewMockPostRepository()
-	postService := service.NewPostService(repo)
+	postService := service.NewPostService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create posts by different authors
@@ -286,7 +298,7 @@ func TestPostService_GetPostsByAuthor_Integration(t *testing.T) {
 
 func TestPostService_ListPosts_Integration(t *testing.T) {
 	repo := NewMockPostRepository()
-	postService := service.NewPostService(repo)
+	postService := service.NewPostService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Create multiple posts

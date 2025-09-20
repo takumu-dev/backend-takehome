@@ -83,12 +83,12 @@ func (m *MockUserRepository) List(ctx context.Context, limit, offset int) ([]*us
 func TestUserService_Implementation(t *testing.T) {
 	// Test that our concrete service implements the interface
 	repo := NewMockUserRepository()
-	var _ user.Service = service.NewUserService(repo)
+	var _ user.Service = service.NewUserService(repo, NewMockLogger())
 }
 
 func TestUserService_Register_Integration(t *testing.T) {
 	repo := NewMockUserRepository()
-	userService := service.NewUserService(repo)
+	userService := service.NewUserService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Test successful registration
@@ -127,7 +127,7 @@ func TestUserService_Register_Integration(t *testing.T) {
 
 func TestUserService_Login_Integration(t *testing.T) {
 	repo := NewMockUserRepository()
-	userService := service.NewUserService(repo)
+	userService := service.NewUserService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Register a user first
@@ -161,7 +161,7 @@ func TestUserService_Login_Integration(t *testing.T) {
 
 func TestUserService_UpdateProfile_Integration(t *testing.T) {
 	repo := NewMockUserRepository()
-	userService := service.NewUserService(repo)
+	userService := service.NewUserService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Register a user first
@@ -197,7 +197,7 @@ func TestUserService_UpdateProfile_Integration(t *testing.T) {
 
 func TestUserService_UpdatePassword_Integration(t *testing.T) {
 	repo := NewMockUserRepository()
-	userService := service.NewUserService(repo)
+	userService := service.NewUserService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Register a user first
@@ -233,7 +233,7 @@ func TestUserService_UpdatePassword_Integration(t *testing.T) {
 
 func TestUserService_List_Integration(t *testing.T) {
 	repo := NewMockUserRepository()
-	userService := service.NewUserService(repo)
+	userService := service.NewUserService(repo, NewMockLogger())
 	ctx := context.Background()
 
 	// Register multiple users
